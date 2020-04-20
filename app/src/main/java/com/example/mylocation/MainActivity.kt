@@ -20,18 +20,25 @@ import com.google.android.gms.location.FusedLocationProviderClient
 
 class MainActivity : AppCompatActivity() {
 
-
+    
+    //Used to help us identify users actions with permission requests
     val PERMISSION_ID = 42
+    
+    //Declare Fused Location Provider API
     lateinit var mFusedLocationClient: FusedLocationProviderClient
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        
+        //Initialize Fused Location Provider Api
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
+        
+        //Run application
         getLastLocation()
     }
 
+    //Returns last recorded location information on device, checks is permission is granted, and if location services is "on"
     @SuppressLint("MissingPermission")
     private fun getLastLocation() {
         if (checkPermissions()) {
@@ -39,9 +46,15 @@ class MainActivity : AppCompatActivity() {
 
                 mFusedLocationClient.lastLocation.addOnCompleteListener(this) { task ->
                     var location: Location? = task.result
+                    
+                    //If location is turned off and on again, location data will be cleared,
+                    //If user never used location before using this app, location data will be clear
+                    //This checks for a null (clear) location value, and requests current location data                                                           
                     if (location == null) {
                         requestNewLocationData()
                     } else {
+                        
+                        //Place Lat and Long Values into our TextView
                         findViewById<TextView>(R.id.latTextView).text = location.latitude.toString()
                         findViewById<TextView>(R.id.lonTextView).text = location.longitude.toString()
                     }
@@ -56,12 +69,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //Record location information in runtime, if data location is null
     @SuppressLint("MissingPermission")
     private fun requestNewLocationData() {
         var mLocationRequest = LocationRequest()
         mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        //Tells the app how often you need the users location updated
         mLocationRequest.interval = 0
         mLocationRequest.fastestInterval = 0
+        //If you want realtime updates, change the intervals above, and comment the line below
         mLocationRequest.numUpdates = 1
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -71,6 +87,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    // When location update is recieved, it calls this callBack method, and sets values into our TextView
     private val mLocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             var mLastLocation: Location = locationResult.lastLocation
@@ -78,7 +95,8 @@ class MainActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.lonTextView).text = mLastLocation.longitude.toString()
         }
     }
-
+    
+    //Checks to see if user has location enabled in his settings
     private fun isLocationEnabled(): Boolean {
         var locationManager: LocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(
@@ -86,6 +104,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    // Checks to see if user granted COARSE and FINE access in manifest
     private fun checkPermissions(): Boolean {
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -102,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
+    // Will ask user for permission if not already given
     private fun requestPermissions() {
         ActivityCompat.requestPermissions(
             this,
@@ -109,7 +129,8 @@ class MainActivity : AppCompatActivity() {
             PERMISSION_ID
         )
     }
-
+    
+    //This method is called once the user has given us access or denied us permission. Helpful for us to continue in app
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray){
         if (requestCode == PERMISSION_ID) {
             if((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)){
